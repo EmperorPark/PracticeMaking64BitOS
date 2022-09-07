@@ -26,7 +26,7 @@ START:
 
     ; 커널 코드 세그먼트를 0x00을 기준으로 하는 것으로 교체하고 EIP의 값을 0x00을 기준으로 재설정
     ; CS 세그먼트 셀렉터: EIP
-    jmp dword 0x08: (PROTECTIONMODE - $$ + 0x10000 )    ; 커널코드 세그먼트가 0x00을 기준으로 하는 반면 실제코드는 0x10000을 기준으로 실행되고 있으므로 
+    jmp dword 0x08: (PROTECTEDMODE - $$ + 0x10000 )    ; 커널코드 세그먼트가 0x00을 기준으로 하는 반면 실제코드는 0x10000을 기준으로 실행되고 있으므로 
                                                         ; 오프셋에서 0x10000을 더해서 세그먼트 교체 후에도 같은 선형 주소를 가리키게 함
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -34,7 +34,7 @@ START:
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 [BITS 32]   ; 이하의 코드는 32bit 코드로 설정
 
-PROTECTIONMODE:
+PROTECTEDMODE:
     mov ax, 0x10        ; 보호모드 커널용 데이터 세그먼트 디스크립터를 AX레지스터에 저장
     mov ds, ax          ; ds 세그먼트 셀렉터에 설정
     mov es, ax          ; es 세그먼트 셀렉터에 설정
@@ -44,16 +44,18 @@ PROTECTIONMODE:
     ; 스택을 0x00000000 - 0x0000FFFF 영역에 64KB 크기로 생성
     mov ss, ax          ; SS 세그먼트 셀렉터에 설정
     mov esp, 0xFFFE     ; ESP 레지스터 어드레스를 0xFFFE로 설정
-    mov ebp, 0xFFFE     ; ESP 레지스터 어드레스를 0xFFFE로 설정
+    mov ebp, 0xFFFE     ; EBP 레지스터 어드레스를 0xFFFE로 설정
 
     ; 화면에 보호모드로 전환되었다는 메시지를 출력
-    push ( SWITCHSECCESSMESSAGE - $$ + 0x10000)     ; 출력할 메시지의 어드레스를 스택에 삽입
+    push ( SWITCHSUCCESSMESSAGE - $$ + 0x10000)     ; 출력할 메시지의 어드레스를 스택에 삽입
     push 2                                          ; 화면 Y 좌표(2)를 스택에 삽입
     push 0                                          ; 화면 X 좌표(0)를 스택에 삽입
     call PRINTMESSAGE                               ; PRINTMESSAGE 함수 호출
     add esp, 12                                     ; 삽입한 파라미터 제거
 
-    jmp $           ; 현재 위치에서 무한 루프 수행
+    ; jmp $           ; 현재 위치에서 무한 루프 수행
+    jmp dword 0x08: 0x10200  ; C 언어 커널이 존재하는 0x10200 어드레스로 이동하여 C 언어 커널 수행
+                            ; CS세그먼트 셀렉터를 커널 코드 디스크립터(0x08)로 변경하면서 0x10200 어드레스(C언어 커널이 있는 어드레스)로 이동
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; 함수 코드 영역
@@ -120,7 +122,7 @@ align 8, db 0
 dw 0x0000
 ; GDTR 자료구조 정의
 GDTR:
-    dw GDTEND - GDT -1          ; 아래에 위치하는 GDT 테이블의 전체 크기
+    dw GDTEND - GDT - 1         ; 아래에 위치하는 GDT 테이블의 전체 크기
     dd ( GDT - $$ + 0x10000 )   ; 아래에 위치하는 GDT 테이블의 시작 어드레스
 
 ; GDT 테이블 정의
@@ -154,7 +156,7 @@ GDT:
 GDTEND:
 
 ; 보호 모드로 전환되었다는 메시지
-SWITCHSECCESSMESSAGE: db 'Switch To Protected Mode Success~!!', 0
+SWITCHSUCCESSMESSAGE: db 'Switch To Protected Mode Success~!!', 0
 
 times 512 - ( $ - $$ ) db 0x00  ; 512바이트를 맞추기 위해 남은 부분을 0으로 채움
 

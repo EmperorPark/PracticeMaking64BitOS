@@ -29,7 +29,7 @@ Disk.img: 00.BootLoader/BootLoader.bin 01.Kernel32/Kernel32.bin
 	@echo ============== Disk Image Bulid Start ==============
 	@echo
 
-	cat $^ > Disk.img
+	./ImageMaker $^
 
 	@echo
 	@echo ============== All Bulid Complete ==============
