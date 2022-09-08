@@ -11,7 +11,24 @@ START:
     mov ax, 0x1000  ; 보호 모드 엔트리 포인트의 시작 어드레스(0x10000)를 세그먼트 레지스터 값으로 변환
     mov ds, ax      ; DS 세그먼트 레지스터에 설정
     mov es, ax      ; ES 세그먼트 레지스터에 설정
+
+
     
+    ; BIOS 서비스를 사용해서 A20 게이트를 활성화
+    mov ax, 0x2401  ; A20 게이트 활성화 서비스 설정
+    int 0x15        ; Call BIOS interrupt Service
+
+    jc .A20GATEERROR    ; 20 게이트가 활성화가 성공했는지 확인 ; A20 게이트 활성화가 실패하면 EFLAGS 레지스터의 CF비트가 1로 설정되므로 이를 검사하여 에러 처리 코드로 이동
+    jmp .A20GATESUCCESS
+
+.A20GATEERROR:
+    ; ERROR 발생 시, 시스템 컨트롤 포트로 전환 시도
+    in al, 0x92     ; 시스템 컨트롤 포트(0x92)에서 1byte를 읽어 AL 레지스터에 저장
+    or al, 0x92     ; 읽은 값에 A20게이트 비트(비트 1)를 1로 설정
+    and al, 0xFE    ; 시스템 리셋 방지를 위해 0xFE와 AND연산하여 비트 0을 0으로 설정
+    out 0x92, al    ; 시스템 컨트롤 포트(0x92)에 변경된 값을 1바이트 설정
+    
+.A20GATESUCCESS:
     cli             ; 인터럽트가 발생하지 못하도록 설정
     lgdt [ GDTR ]   ; GDTR 자료구조를 프로세서에 설정하여 GDT 테이블을 로드
 

@@ -2,7 +2,7 @@
 # 빌드 환경 및 규칙 설정
 #####################################################################
 NASM32 = nasm
-GCC32 = gcc -c -m32 -ffreestanding -O2 # 독립실행이 가능하도록 ffreestanding 옵션들어감
+GCC32 = gcc -c -m32 -ffreestanding # 독립실행이 가능하도록 ffreestanding 옵션들어감
 LD32 = x86_64-linux-gnu-ld -melf_i386 -T ../elf_i386.x -nostdlib -e Main -Ttext 0x10200
 OBJCOPY32 = /usr/bin/x86_64-linux-gnu-objcopy -j .text -j .data -j .rodata -j .bss -S -O binary # OBJCOPY를 이용해 섹션을 빼내고 운영체제에 의존하는 부분을 제거
 
