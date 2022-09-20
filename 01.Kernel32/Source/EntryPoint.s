@@ -177,3 +177,17 @@ SWITCHSUCCESSMESSAGE: db 'Switch To Protected Mode Success~!!', 0
 
 times 512 - ( $ - $$ ) db 0x00  ; 512바이트를 맞추기 위해 남은 부분을 0으로 채움
 
+
+; ; 페이징 활성화를 위해 PAE 비트를 1로 설정
+; mov eax, cr4        ; CR4 컨트롤 레지스터의 값을 EAX 레지스터에 저장
+; or eax, 0x20        ; PAE 비트(비트 5)를 1로 설정
+; mov cr4, eax        ; 설정된 값을 다시 CR4 레지스터에 저장
+
+; ; PML4 테이블의 어드레스와 캐시 활성화 
+; mov eax, 0x100000   ; EAX 레지스터에 PML4 테이블이 존재하는 0x100000(1MB)를 저장 ; 캐시 기능을 활성화 해야 하므로 PCD, PWT 비트를 모두 0으로 설정해야하고, PML4 테이블이 0x100000(1MB)의 어드레스에 위치 하므로 CR3 레지스터에 0x100000을 대입
+; mov cr3, eax        ; CR3 컨트롤 레지스터에 0x100000(1MB)을 저장
+
+; ; 프로세서의 페이징 기능 활성화
+; mov eax, cr0        ; EAX 레지스터에 CR0 컨트롤 레지스터를 저장
+; or eax, 0x80000000  ; PG 비트(비트 31)를 1로 설정
+; mov cr0, eax        ; 설정된 값을 다시 CR0 컨트롤 레지스터에 저장
