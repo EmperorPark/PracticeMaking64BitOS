@@ -18,13 +18,13 @@ START:
     mov ax, 0x2401  ; A20 게이트 활성화 서비스 설정
     int 0x15        ; Call BIOS interrupt Service
 
-    jc .A20GATEERROR    ; 20 게이트가 활성화가 성공했는지 확인 ; A20 게이트 활성화가 실패하면 EFLAGS 레지스터의 CF비트가 1로 설정되므로 이를 검사하여 에러 처리 코드로 이동
+    jc .A20GATEERROR    ; A20 게이트 활성화가 성공했는지 확인 ; A20 게이트 활성화가 실패하면 EFLAGS 레지스터의 CF비트가 1로 설정되므로 이를 검사하여 에러 처리 코드로 이동
     jmp .A20GATESUCCESS
 
 .A20GATEERROR:
     ; ERROR 발생 시, 시스템 컨트롤 포트로 전환 시도
     in al, 0x92     ; 시스템 컨트롤 포트(0x92)에서 1byte를 읽어 AL 레지스터에 저장
-    or al, 0x92     ; 읽은 값에 A20게이트 비트(비트 1)를 1로 설정
+    or al, 0x02     ; 읽은 값에 A20게이트 비트(비트 1)를 1로 설정
     and al, 0xFE    ; 시스템 리셋 방지를 위해 0xFE와 AND연산하여 비트 0을 0으로 설정
     out 0x92, al    ; 시스템 컨트롤 포트(0x92)에 변경된 값을 1바이트 설정
     
@@ -33,8 +33,8 @@ START:
     lgdt [ GDTR ]   ; GDTR 자료구조를 프로세서에 설정하여 GDT 테이블을 로드
 
     ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-    ; 보호 모드로 진입
-    ; Disable Pageing, Disable Cache, Internal FPU, Disable Align Check, Enable ProtectedNode
+    ; 보호모드로 진입
+    ; Disable Paging, Disable Cache, Internal FPU, Disable Align Check, Enable ProtectedMode
     ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
     mov eax, 0x4000003B ; PG(Paging)=0, CD(CacheDisable)=1, NW(Not Write-through)=0, AM(Alignment Mask)=0, 
                     ; WP(Write Protect)=0, NE(Numeric Error 1: Processor Internel Interrupt, 0: Externel Interrupt)=1, ET(Extension Type)=1, TS(Task Switched, 1: available FPU opertaion, 0: FPU opertaion error)=1, 
@@ -43,8 +43,11 @@ START:
 
     ; 커널 코드 세그먼트를 0x00을 기준으로 하는 것으로 교체하고 EIP의 값을 0x00을 기준으로 재설정
     ; CS 세그먼트 셀렉터: EIP
-    jmp dword 0x08: (PROTECTEDMODE - $$ + 0x10000 )    ; 커널코드 세그먼트가 0x00을 기준으로 하는 반면 실제코드는 0x10000을 기준으로 실행되고 있으므로 
-                                                        ; 오프셋에서 0x10000을 더해서 세그먼트 교체 후에도 같은 선형 주소를 가리키게 함
+    jmp dword 0x18: ( PROTECTEDMODE - $$ + 0x10000 )     ; $$는 $$를 포함하는 세그먼트의 시작 어드레스를 나타내므로 .text 섹션의 시작 어드레스를 의미
+                                                        ; PROTECTEDMODE 레이블에서 현재 세그먼트의 시작 어드레스를 뺐으므로 .text섹션에소 떨어진 오프셋을 나타냄
+                                                        ; 커널코드 세그먼트가 0x00을 기준으로 하는 반면 실제코드(실제 보호 모드 엔트리 포인트)는 0x10000을 기준으로 실행되고 있으므로 
+                                                        ; 오프셋에서 0x10000을 더해서 세그먼트 교체 후에도 같은 선형 주소를 가리키게 함(PROTECTEDMODE 레이블의 절대 어드레스)
+
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; 보호모드로 진입
@@ -52,7 +55,7 @@ START:
 [BITS 32]   ; 이하의 코드는 32bit 코드로 설정
 
 PROTECTEDMODE:
-    mov ax, 0x10        ; 보호모드 커널용 데이터 세그먼트 디스크립터를 AX레지스터에 저장
+    mov ax, 0x20        ; 보호모드 커널용 데이터 세그먼트 디스크립터를 AX레지스터에 저장
     mov ds, ax          ; ds 세그먼트 셀렉터에 설정
     mov es, ax          ; es 세그먼트 셀렉터에 설정
     mov fs, ax          ; fs 세그먼트 셀렉터에 설정
@@ -64,14 +67,13 @@ PROTECTEDMODE:
     mov ebp, 0xFFFE     ; EBP 레지스터 어드레스를 0xFFFE로 설정
 
     ; 화면에 보호모드로 전환되었다는 메시지를 출력
-    push ( SWITCHSUCCESSMESSAGE - $$ + 0x10000)     ; 출력할 메시지의 어드레스를 스택에 삽입
+    push ( SWITCHSUCCESSMESSAGE - $$ + 0x10000 )    ; 출력할 메시지의 어드레스를 스택에 삽입
     push 2                                          ; 화면 Y 좌표(2)를 스택에 삽입
     push 0                                          ; 화면 X 좌표(0)를 스택에 삽입
     call PRINTMESSAGE                               ; PRINTMESSAGE 함수 호출
     add esp, 12                                     ; 삽입한 파라미터 제거
 
-    ; jmp $           ; 현재 위치에서 무한 루프 수행
-    jmp dword 0x08: 0x10200  ; C 언어 커널이 존재하는 0x10200 어드레스로 이동하여 C 언어 커널 수행
+    jmp dword 0x18: 0x10200 ; C 언어 커널이 존재하는 0x10200 어드레스로 이동하여 C 언어 커널 수행
                             ; CS세그먼트 셀렉터를 커널 코드 디스크립터(0x08)로 변경하면서 0x10200 어드레스(C언어 커널이 있는 어드레스)로 이동
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -92,13 +94,13 @@ PRINTMESSAGE:
     ; X, Y의 좌표로 비디오 메모리의 어드레스를 계산함
     ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
     ; Y 좌표를 이용해서 먼저 라인 어드레스를 구함
-    mov eax, dword [ebp + 12]   ; 파라미터 2(화면 좌표 Y)를 EAX 레지스터에 설정
+    mov eax, dword [ ebp + 12 ] ; 파라미터 2(화면 좌표 Y)를 EAX 레지스터에 설정
     mov esi, 160                ; 한 라인의 바이트 수(2 * 80 컬럼)를 ESI 레지스터에 설정
     mul esi                     ; EAX 레지스터와 ESI레지스터를 곱하여 화면 Y 어드레스 계산
     mov edi, eax                ; 계산된 화면 Y 어드레스를 EDI 레지스터에 설정
 
     ; X 좌표를 이용해서 2를 곱한 후 최종 어드레스를 구함
-    mov eax, dword [ebp + 8]    ; 파라미터 1(화면 좌표 X)를 EAX 레지스터에 설정
+    mov eax, dword [ ebp + 8 ]  ; 파라미터 1(화면 좌표 X)를 EAX 레지스터에 설정
     mov esi, 2                  ; 한 문자를 나타내는 바이트 수(2)를 ESI 레지스터에 설정
     mul esi                     ; EAX 레지스터와 ESI레지스터를 곱하여 화면 X 어드레스를 계산
     add edi, eax                ; 화면 Y 어드레스와 X 어드레스를 더해서 실제 비디오 메모리 어드레스를 계산
@@ -106,7 +108,7 @@ PRINTMESSAGE:
     ; 출력할 문자열의 어드레스
     mov esi, dword [ ebp + 16 ] ; 파라미터 3(출력할 문자열 어드레스)
 
-.MESSAGLOOP:                    ; 메시지를 출력하는 루프
+.MESSAGELOOP:                    ; 메시지를 출력하는 루프
     mov cl, byte [esi]          ; ESI 레지스터가 가리키는 문자열 위치에서 한 문자를 CL레지스터에 복사
                                 ; CL 레지스터는 ECX레지스터의 하위 1byte(문자 하나는 1byte)
     cmp cl, 0                   ; 복사된 문자와 0을 비교
@@ -118,7 +120,7 @@ PRINTMESSAGE:
     add esi, 1                  ; ESI 레지스터에 1을 더하여 다음 문자열로 이동
     add edi, 2                  ; EDI 레지스터에 2를 더하여 비디오 메모리의 다음 문자 위치로 이동(비디오 메모리는 바탕, 속성 쌍으로 구성되므로 문자만 출력하려면 2를 더해야 함)
 
-    jmp .MESSAGLOOP             ; 메시지 출력 루프로 이동하여 다음 문자열을 출력
+    jmp .MESSAGELOOP             ; 메시지 출력 루프로 이동하여 다음 문자열을 출력
 
 .MESSAGEEND:
     pop edx     ; 함수에서 사용이 끝난 EDX 레지스터 부터 EBP 레지스터 까지를 스택에 삽입된 값을 이용해서 복원
@@ -153,6 +155,25 @@ GDT:
         db 0x00
         db 0x00
 
+    ;; IA-32e 모드 커널용 코드 세그먼트 디스크립터와 데이터 세그먼트 디스크립터. 상위 4bytes에 위치하는 L비트=1로 D비트=0으로 설정함.
+    ; IA-32e 모드 커널용 코드 세그먼트 디스크립터
+    IA_32eCODEDESCRIPTOR:
+        dw 0xFFFF   ; Limit [15:0]
+        dw 0x0000   ; Base [15:0]
+        db 0x00     ; Base [23:16]
+        db 0x9A     ; P(Present)=0b1, DPL(Descriptor Privilege Level)=0b00, S(Discripter Type 1:Segement Des, 0:System Des)=0b1(Code Segment), Type=0x0A(Execute/Read)
+        db 0xAF     ; G(Granularity 1:*4KB, 0:*1)=0b1, D/B(Default Operation Size 1:32bit, 0: 16bit)=0b0, L(use in IA-32e, 1: IA-32e, 0: 32bit legacy compatibility)=0b1, AVL=0b0, Limit[19:16]
+        db 0x00     ; Base [31:24] 
+
+    ; IA-32e 모드 커널용 데이터 세그먼트 디스크립터
+    IA_32eDATADESCRIPTOR:
+        dw 0xFFFF   ; Limit [15:0]
+        dw 0x0000   ; Base [15:0]
+        db 0x00     ; Base [23:16]
+        db 0x92     ; P(Present)=0b1, DPL(Descriptor Privilege Level)=0b00, S(Discripter Type 1:Segement Des, 0:System Des)=0b1(Data Segment), Type=0x02(Read/Write)
+        db 0xAF     ; G(Granularity 1:*4KB, 0:*1)=0b1, D/B(Default Operation Size 1:32bit, 0: 16bit)=0b0, L(use in IA-32e, 1: IA-32e, 0: 32bit legacy compatibility)=0b1, AVL=0b0, Limit[19:16]
+        db 0x00     ; Base [31:24] 
+
     ; 보호 모드 커널용 코드 세그먼트 디스크립터
     CODEDESCRIPTOR:
         dw 0xFFFF   ; Limit [15:0]
@@ -176,18 +197,3 @@ GDTEND:
 SWITCHSUCCESSMESSAGE: db 'Switch To Protected Mode Success~!!', 0
 
 times 512 - ( $ - $$ ) db 0x00  ; 512바이트를 맞추기 위해 남은 부분을 0으로 채움
-
-
-; ; 페이징 활성화를 위해 PAE 비트를 1로 설정
-; mov eax, cr4        ; CR4 컨트롤 레지스터의 값을 EAX 레지스터에 저장
-; or eax, 0x20        ; PAE 비트(비트 5)를 1로 설정
-; mov cr4, eax        ; 설정된 값을 다시 CR4 레지스터에 저장
-
-; ; PML4 테이블의 어드레스와 캐시 활성화 
-; mov eax, 0x100000   ; EAX 레지스터에 PML4 테이블이 존재하는 0x100000(1MB)를 저장 ; 캐시 기능을 활성화 해야 하므로 PCD, PWT 비트를 모두 0으로 설정해야하고, PML4 테이블이 0x100000(1MB)의 어드레스에 위치 하므로 CR3 레지스터에 0x100000을 대입
-; mov cr3, eax        ; CR3 컨트롤 레지스터에 0x100000(1MB)을 저장
-
-; ; 프로세서의 페이징 기능 활성화
-; mov eax, cr0        ; EAX 레지스터에 CR0 컨트롤 레지스터를 저장
-; or eax, 0x80000000  ; PG 비트(비트 31)를 1로 설정
-; mov cr0, eax        ; 설정된 값을 다시 CR0 컨트롤 레지스터에 저장

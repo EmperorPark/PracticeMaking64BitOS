@@ -3,8 +3,11 @@
 
 #include "Types.h"
 
-
+////////////////////////////////////////////////////////////////////////////////
+//
 // 매크로
+//
+////////////////////////////////////////////////////////////////////////////////
 #define PAGE_FLAGS_P    0x00000001 // Present(유효)
 #define PAGE_FLAGS_RW   0x00000002 // Read/Write(0: Read, 1:Read/Write)
 #define PAGE_FLAGS_US   0x00000004 // User/Supervisor(Flag Set -> User Level)
@@ -22,12 +25,15 @@
 #define PAGE_TABLESIZE  0x1000
 #define PAGE_MAXENTRYCOUNT  512
 #define PAGE_DEFAULTSIZE    0x200000
-
+////////////////////////////////////////////////////////////////////////////////
+//
 // 구조체
+//
+////////////////////////////////////////////////////////////////////////////////
 #pragma pack( push, 1 )
 
 /// @brief 페이지 엔트리에 대한 자료 구조
-typedef struct pageTableEntryStruct
+typedef struct kPageTableEntryStruct
 {
     // PML4T와 PDPTE의 경우
     // 1bit P,RW, US, PWT, PCD, A, D, PS, G, 3bits Avail, 1bit PAT, 8bits Reserved, 20 bits Base Address
@@ -45,6 +51,6 @@ typedef struct pageTableEntryStruct
 void kSetPageEntryData( PTENTRY* pstEntry, DWORD dwUpperBaseAddress, DWORD dwLowerBaseAddress, // dwUpperBaseAddress, dwLowerBaseAddress: 32bit변수로는 64bit Address를 표현 할 수 없으므로 상위 32bit와 하위 32bit 어드레스를 나타내는 변수를 사용
 DWORD dwLowerFlags, DWORD dwUpperFlags );
 
-void kInitalizePageTables( void );
+void kInitializePageTables( void );
 
 #endif /*__PAGE_H__*/

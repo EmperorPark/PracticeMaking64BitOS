@@ -1,7 +1,7 @@
 #include "Page.h"
 
 // IA-32e 모드 커널을 위한 페이지 테이블 생성
-void kInitalizePageTables( void ) {
+void kInitializePageTables( void ) {
     PML4TENTRY* pstPML4TEntry;
     PDPTENTRY* pstPDPTEntry;
     PDENTRY* pstPDEntry;
@@ -23,7 +23,7 @@ void kInitalizePageTables( void ) {
     for( i = 0; i < 64; i++ ) {
         kSetPageEntryData( &( pstPDPTEntry[ i ] ), 0, 0x102000 + ( i * PAGE_TABLESIZE), PAGE_FLAGS_DEFAULT, 0 );
     }
-    for( i = 0; i < PAGE_MAXENTRYCOUNT; i++ ) {
+    for( i = 64; i < PAGE_MAXENTRYCOUNT; i++ ) {
         kSetPageEntryData( &( pstPDPTEntry[ i ] ), 0, 0, 0, 0 );
     }
 
