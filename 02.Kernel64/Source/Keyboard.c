@@ -419,7 +419,7 @@ void UpdateCombinationKeyStatusAndLED( BYTE bScanCode ) {
 }
 
 // 스캔 코드를 ASCII 코드로 변환
-BOOL kConvertScanCodeToASCIICode( BYTE bScanCode, BYTE* pbtASCIICode, BOOL* pbFlags ) {
+BOOL kConvertScanCodeToASCIICode( BYTE bScanCode, BYTE* pbASCIICode, BOOL* pbFlags ) {
     BOOL bUseCominedKey;
     
     // 이전에 Pause키가 수신 되었다면 Pause의 남은 스캔 코드를 무시
@@ -430,7 +430,7 @@ BOOL kConvertScanCodeToASCIICode( BYTE bScanCode, BYTE* pbtASCIICode, BOOL* pbFl
 
     // Pause 키는 특별히 처리
     if( bScanCode == 0xE1 ) {
-        *pbtASCIICode = KEY_PAUSE;
+        *pbASCIICode = KEY_PAUSE;
         *pbFlags = KEY_FLAGS_DOWN;
         gs_stKeyboardManager.iSkipCountForPause = KEY_SKIPCOUNTFORPAUSE;
         return TRUE;
@@ -446,9 +446,9 @@ BOOL kConvertScanCodeToASCIICode( BYTE bScanCode, BYTE* pbtASCIICode, BOOL* pbFl
 
     // 키 값 설명
     if( bUseCominedKey == TRUE ) {
-        *pbtASCIICode = gs_vstKeyMappingTable[ bScanCode & 0x7F ].bCombinedCode;
+        *pbASCIICode = gs_vstKeyMappingTable[ bScanCode & 0x7F ].bCombinedCode;
     } else {
-        *pbtASCIICode = gs_vstKeyMappingTable[ bScanCode & 0x7F ].bNormalCode;
+        *pbASCIICode = gs_vstKeyMappingTable[ bScanCode & 0x7F ].bNormalCode;
     }
 
     // 확장 키 유무 설정
