@@ -14,9 +14,9 @@ START:
     mov ds, ax          ; DS 세그먼트 셀렉터에 설정
     mov es, ax          ; ES 세그먼트 셀렉터에 설정
     mov fs, ax          ; FS 세그먼트 셀렉터에 설정
-    mov gs, ax          ; GS 세그먼트 셀럭터에 설정
+    mov gs, ax          ; GS 세그먼트 셀렉터에 설정
 
-    ; 스택을 0x600000~0x6FFFFF 영엑에 1MB 크기로 생성
+    ; 스택을 0x600000~0x6FFFFF 영역에 1MB 크기로 생성
     mov ss, ax          ; SS 세그먼트 셀렉터에 설정
     mov rsp, 0x6FFFF8   ; RSP 어드레스를 0x6FFFF8로 설정
     mov rbp, 0x6FFFF8   ; RBP 어드레스를 0x6FFFF8로 설정

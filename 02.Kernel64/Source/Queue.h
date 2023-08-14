@@ -25,6 +25,9 @@ typedef struct kQueueManagerStruct
 
 #pragma pack( pop )
 
+// 함수
+//
+
 void kInitializeQueue( QUEUE* pstQueue, void* pvQueueBuffer, int iMaxDataCount, int iDataSize );
 BOOL kIsQueueFull( const QUEUE* pstQueue ); // 큐가 가득 찼는지 여부를 반환
 BOOL kIsQueueEmpty( const QUEUE* pstQueue ); // 큐가 비었는지 여부를 반환

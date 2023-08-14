@@ -48,9 +48,8 @@ typedef struct kPageTableEntryStruct
 
 // 함수
 // 페이지 엔트리에 데이터를 설정하는 함수
+void kInitializePageTables( void );
 void kSetPageEntryData( PTENTRY* pstEntry, DWORD dwUpperBaseAddress, DWORD dwLowerBaseAddress, // dwUpperBaseAddress, dwLowerBaseAddress: 32bit변수로는 64bit Address를 표현 할 수 없으므로 상위 32bit와 하위 32bit 어드레스를 나타내는 변수를 사용
 DWORD dwLowerFlags, DWORD dwUpperFlags );
-
-void kInitializePageTables( void );
 
 #endif /*__PAGE_H__*/

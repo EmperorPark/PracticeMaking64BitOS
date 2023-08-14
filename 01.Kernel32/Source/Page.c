@@ -29,7 +29,7 @@ void kInitializePageTables( void ) {
 
 
     // 페이지 디렉터리 테이블 생성
-    // 하나의 페이지 디렉터리가 16GB까지 매핑가능
+    // 하나의 페이지 디렉터리가 1GB까지 매핑가능
     // 여유있게 64개의 페이지 디렉터리를 생성하여 총 64GB까지 지원
     pstPDEntry = ( PDENTRY* ) 0x102000;
     dwMappingAddress = 0;

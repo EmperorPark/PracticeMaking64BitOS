@@ -51,7 +51,7 @@ BOOL kWaitForACKAndPutOtherScanCode( void )
 
         // 출력 버퍼(포트 0x60)에서 읽은 데이터가 ACK(0xFA)이면 성공
         bData = kInPortByte( 0x60 ); // 키보드 컨트롤러의 출력 버퍼(포트 0x60)에서 한 바이트를 읽는 함수
-        if ( bData = 0xFA )
+        if ( bData == 0xFA )
         {
             bResult = TRUE;
             break;
@@ -183,7 +183,7 @@ void kEnableA20Gate( void ) {
     bOutputPortData = kInPortByte( 0x60 );
 
     // A20 게이트 비트 설정
-    bOutputPortData |= 0x02; // A20게이트 활성화 비트(비트1)를 1로 설정. 프로세서를 리셋하려면 bOutputPortData=0
+    bOutputPortData |= 0x01; // A20게이트 활성화 비트(비트1)를 1로 설정. 프로세서를 리셋하려면 bOutputPortData=0
 
     // 입력 버퍼(포트 0x60)에 데이터가 비어 있으면 출력 포트에 값을 쓰는 커맨드와 출력 포트 데이터 전송
     for( i = 0; i < 0xFFFF ; i++ ) {
@@ -330,7 +330,7 @@ static KEYMAPPINGENTRY gs_vstKeyMappingTable[ KEY_MAPPINGTABLEMAXCOUNT ] =
 
 // 스캔 코드가 알파벳 범위인지 여부를 반환
 BOOL kIsAlphabetScanCode( BYTE bScanCode ) {
-    // 반호나 테이블 값을 직접 읽어서 알파벳 범위인지 확인
+    // 변환 테이블 값을 직접 읽어서 알파벳 범위인지 확인
     if( ('a' <= gs_vstKeyMappingTable[ bScanCode ].bNormalCode) && (gs_vstKeyMappingTable[ bScanCode ].bNormalCode <= 'z') ) {
         return TRUE;
     }
@@ -439,7 +439,7 @@ void UpdateCombinationKeyStatusAndLED( BYTE bScanCode ) {
 
 // 스캔 코드를 ASCII 코드로 변환
 BOOL kConvertScanCodeToASCIICode( BYTE bScanCode, BYTE* pbASCIICode, BOOL* pbFlags ) {
-    BOOL bUseCominedKey;
+    BOOL bUseCombinedKey;
     
     // 이전에 Pause키가 수신 되었다면 Pause의 남은 스캔 코드를 무시
     if( gs_stKeyboardManager.iSkipCountForPause > 0 ) {
@@ -461,17 +461,17 @@ BOOL kConvertScanCodeToASCIICode( BYTE bScanCode, BYTE* pbASCIICode, BOOL* pbFla
     }
 
     // 조합된 키를 반환해야 하는가?
-    bUseCominedKey = kIsUseCombinedCode( bScanCode );
+    bUseCombinedKey = kIsUseCombinedCode( bScanCode );
 
     // 키 값 설명
-    if( bUseCominedKey == TRUE ) {
+    if( bUseCombinedKey == TRUE ) {
         *pbASCIICode = gs_vstKeyMappingTable[ bScanCode & 0x7F ].bCombinedCode;
     } else {
         *pbASCIICode = gs_vstKeyMappingTable[ bScanCode & 0x7F ].bNormalCode;
     }
 
     // 확장 키 유무 설정
-    if( gs_stKeyboardManager.bExtendedCodeIn = TRUE ) {
+    if( gs_stKeyboardManager.bExtendedCodeIn == TRUE ) {
         *pbFlags = KEY_FLAGS_EXTENDEDKEY;
         gs_stKeyboardManager.bExtendedCodeIn = FALSE;
     } else {
@@ -492,7 +492,7 @@ BOOL kConvertScanCodeToASCIICode( BYTE bScanCode, BYTE* pbASCIICode, BOOL* pbFla
 BOOL kInitializeKeyboard( void )
 {
     // 큐 초기화
-    kInitializeQueue( &gs_stKeyQueue, &gs_vstKeyQueueBuffer, KEY_MAXQUEUECOUNT, sizeof( KEYDATA ) );
+    kInitializeQueue( &gs_stKeyQueue, gs_vstKeyQueueBuffer, KEY_MAXQUEUECOUNT, sizeof( KEYDATA ) );
 
     // 키보드 활성화
     return kActivateKeyboard();
@@ -515,7 +515,7 @@ BOOL kConvertScanCodeAndPutQueue( BYTE bScanCode )
         bPreviousInterrupt = kSetInterruptFlag( FALSE ); // 인터럽트를 비활성화하고 현재 인터럽트 플래그를 반환해 추후 인터럽트 플래그를 복원 할 수 있게 함
 
         // 키 큐에 삽입
-        return kPutQueue( &gs_stKeyQueue, &stData );
+        bResult = kPutQueue( &gs_stKeyQueue, &stData );
 
         // 이전 인터럽트 플래그 복원
         kSetInterruptFlag( bPreviousInterrupt );
@@ -540,7 +540,7 @@ BOOL kGetKeyFromKeyQueue( KEYDATA* pstData )
     bPreviousInterrupt = kSetInterruptFlag( FALSE );
 
     // 키 큐에서 키 데이터를 제거
-    bResult =  kGetQueue( &gs_stKeyQueue, pstData );
+    bResult = kGetQueue( &gs_stKeyQueue, pstData );
 
     // 이전 인터럽트 플래그 복원
     kSetInterruptFlag( bPreviousInterrupt );
