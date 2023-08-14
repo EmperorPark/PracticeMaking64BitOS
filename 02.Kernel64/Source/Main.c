@@ -1,6 +1,7 @@
 #include "Types.h"
 #include "Keyboard.h"
 #include "Descriptor.h"
+#include "AssemblyUtility.h"
 #include "PIC.h"
 
 // 함수 선언
@@ -16,6 +17,7 @@ void Main( void )
     BYTE bFlags;
     BYTE bTemp;
     int i = 0;
+    KEYDATA stData;
 
     kPrintString( 0, 10, "Switch To IA-32e Mode Success~!!" );
     kPrintString( 0, 11, "IA-32e C Language Kernel Start..............[Pass]" );
@@ -33,10 +35,10 @@ void Main( void )
     kLoadIDTR( IDTR_STARTADDRESS );
     kPrintString( 45, 14, "Pass" );
 
-    kPrintString( 0, 15, "Keyboard Activate...........................[    ]" );
+    kPrintString( 0, 15, "Keyboard Activate And Queue Initialize......[    ]" );
 
     // 키보드를 활성화
-    if( kActivateKeyboard() == TRUE ) {
+    if( kInitializeKeyboard() == TRUE ) {
         kPrintString( 45, 15, "Pass" );
         kChangeKeyboardLED( FALSE, FALSE, FALSE );
     } else {
@@ -52,21 +54,23 @@ void Main( void )
     kPrintString( 45, 16, "Pass" );
 
     while ( 1 ) {
-        // 출력 버퍼(포트 0x60)가 차 있으면 스캔 코드를 읽을 수 있음
-        if( kIsOutputBufferFull() == TRUE ) { // 출력 버퍼(포트 0x60)의 상태를 확인하여 데이터가 차 있을 경우 TRUE, 비어 있을 경우 FALSE를 반환하는 함숮
-            bTemp = kGetKeyboardScanCode(); // 출력 버퍼(포트 0x60)에서 스캔 코드 값을 읽어 반환하는 함수
-            // 스캔 코드를 ASCII 코드로 변환하는 함수를 호출 하여 ASCII 코드와 눌림 또는 떨어짐 정보를 반환
-            if( kConvertScanCodeToASCIICode( bTemp, &( vcTemp[ 0 ] ), &bFlags ) == TRUE ) {
-                // 키가 눌러졌으면 키의 ASCII 코드 값을 화면에 출력
-                if( bFlags & KEY_FLAGS_DOWN ) {
-                    kPrintString( i++, 17, vcTemp );
-                    // 0이 입력되면 변수를 0으로 나누어 Divide Error 예외(벡터 0번)를 발생시킴
-                    if( vcTemp[ 0 ] == '0' ) {
-                        // 아래 코드를 수행하면 Divide Error 예외가 발생하여 커널의 임시 핸들러가 수행됨
-                        bTemp = bTemp / 0;
-                    }
+        // 키 큐에 데이터가 있으면 키를 처리
+        if( kGetKeyFromKeyQueue( &stData ) == TRUE ) 
+        { 
+            // 키가 눌러졌으면 키의 ASCII 코드 값을 화면에 출력
+            if( stData.bFlags & KEY_FLAGS_DOWN ) 
+            {
+                // 키 데이터의 ASCII 코드 값을 저장
+                vcTemp[ 0 ] = stData.bASCIICode;
+                kPrintString( i++, 17, vcTemp );
+
+                // 0이 입력되면 변수를 0으로 나누어 Divide Error 예외(벡터 0번)를 발생시킴
+                if( vcTemp[ 0 ] == '0' ) {
+                    // 아래 코드를 수행하면 Divide Error 예외가 발생하여 커널의 임시 핸들러가 수행됨
+                    bTemp = bTemp / 0;
                 }
             }
+            
         }
     } 
 }

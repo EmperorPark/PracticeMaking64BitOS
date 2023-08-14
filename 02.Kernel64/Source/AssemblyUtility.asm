@@ -71,6 +71,6 @@ kDisableInterrupt:
 ; RFLAGS 레지스터를 읽어서 되돌려줌
 ;   PARAM: 없음
 kReadRFLAGS:
-    pushfq          ; RFLAGS 레지스터를 스택에 저장; pushfq RFLAGS 레지스터를 스택에 저장하는 명령어
+    pushfq          ; RFLAGS 레지스터를 스택에 저장; pushfq: RFLAGS 레지스터를 스택에 저장하는 명령어
     pop rax         ; 스택에 저장된 RFLAGS 레지스터를 RAX 레지스터에 저장하여 함수의 반환 값으로 설정
     ret
