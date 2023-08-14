@@ -29,14 +29,14 @@
 #define GDT_FLAGS_LOWER_USERCODE ( GDT_TYPE_CODE | GDT_FLAGS_LOWER_S | GDT_FLAGS_LOWER_DPL3 | GDT_FLAGS_LOWER_P )
 #define GDT_FLAGS_LOWER_USERDATA ( GDT_TYPE_DATA | GDT_FLAGS_LOWER_S | GDT_FLAGS_LOWER_DPL3 | GDT_FLAGS_LOWER_P )
 
-// Upper Flags는 Granulaty로 설정하고 코드 및 데이터는 64비트 축사
+// Upper Flags는 Granulaty로 설정하고 코드 및 데이터는 64비트 추가
 #define GDT_FLAGS_UPPER_CODE ( GDT_FLAGS_UPPER_G | GDT_FLAGS_UPPER_L )
 #define GDT_FLAGS_UPPER_DATA ( GDT_FLAGS_UPPER_G | GDT_FLAGS_UPPER_L )
 #define GDT_FLAGS_UPPER_TSS ( GDT_FLAGS_UPPER_G )
 
 // 세그먼트 디스크립터 오프셋
-#define GDT_KERNALCODESEGMENT   0x08
-#define GDT_KERNALDATASEGMENT   0x10
+#define GDT_KERNELCODESEGMENT   0x08
+#define GDT_KERNELDATASEGMENT   0x10
 #define GDT_TSSSEGMENT          0x18
 
 // 기타 GDT에 관련된 매크로
@@ -54,8 +54,8 @@
 // IDT
 //=======================================
 // 조합에 사용할 기본 매크로
-#define IDT_TYPE_INTERRUPT      0x0e
-#define IDT_TYPE_TRAP           0x0f
+#define IDT_TYPE_INTERRUPT      0x0E
+#define IDT_TYPE_TRAP           0x0F
 #define IDT_FLAGS_DPL0          0x00
 #define IDT_FLAGS_DPL1          0x20
 #define IDT_FLAGS_DPL2          0x40
@@ -65,7 +65,7 @@
 #define IDT_FLAGS_IST1          1
 
 // 실제 사용할 매크로
-#define IDT_FLAGS_KERNAL        ( IDT_FLAGS_DPL0 | IDT_FLAGS_P ) // 인터럽트와 예외처리용 게이트 디스크립터의 플래그
+#define IDT_FLAGS_KERNEL        ( IDT_FLAGS_DPL0 | IDT_FLAGS_P ) // 인터럽트와 예외처리용 게이트 디스크립터의 플래그
 #define IDT_FLAGS_USER          ( IDT_FLAGS_DPL3 | IDT_FLAGS_P ) // 어플리케이션이 소프트웨어 인트럽트(SWI)를 사용하여 커널모드로 진입하는데 사용할 게이트 디스크립터의 플래그, 시스템 콜용
 
 // 기타 IDT에 관련된 매크로
@@ -148,13 +148,12 @@ typedef struct kIDTEntryStruct // IDT 게이트 디스크립터의 자료구조
 #pragma pack ( pop )
 
 // 함수
-void kInitalizeGDTTableAndTSS( void );
+void kInitializeGDTTableAndTSS( void );
 void kSetGDTEntry8( GDTENTRY8* pstEntry, DWORD dwBaseAddress, DWORD dwLimit, BYTE bUpperFlags, BYTE bLowerFlags, BYTE bType );
 void kSetGDTEntry16( GDTENTRY16* pstEntry, QWORD qwBaseAddress, DWORD dwLimit, BYTE bUpperFlags, BYTE bLowerFlags, BYTE bType );
 void kInitializeTSSSegment( TSSSEGMENT* pstTSS );
 
 void kInitializeIDTTables( void );
 void kSetIDTEntry( IDTENTRY* pstEntry, void* pvHandler, WORD wSelector, BYTE bIST, BYTE bFlags, BYTE bType );
-void kDummyHandler( void );
 
 #endif /*__DESCRIPTOR_H__*/

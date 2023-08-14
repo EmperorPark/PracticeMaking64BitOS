@@ -2,8 +2,9 @@
 
 SECTION .text       ; text 섹션(세그먼트)을 정의
 
-; C 언어에서 호출할 수 있도록 이름을 노출함
+; C 언어에서 호출할 수 있도록 이름을 노출함(Export)
 global kInPortByte, kOutPortByte, kLoadGDTR, kLoadTR, kLoadIDTR
+global kEnableInterrupt, kDisableInterrupt, kReadRFLAGS
 
 ; 포트로부터 1바이트를 읽음
 ;   PARAM: 포트번호
@@ -55,3 +56,21 @@ kLoadIDTR:
     lidt [ rdi ]    ; 파라미터 1(IDTR의 어드레스)를 프로세서에 로드하여 IDT 테이블을 설정
     ret
 
+; 인터럽트를 활성화
+;   PARAM: 없음
+kEnableInterrupt:
+    sti             ; 인터럽트를 활성화 ; sti: 인터럽트가 발생 가능하게 설정하는 명령어, RFLAGS 레지스터의 IF 비트=1
+    ret
+
+; 인터럽트를 비활성화
+;   PARAM: 없음
+kDisableInterrupt:
+    cli             ; 인터럽트를 비활성화 ; cli: 인터럽트가 발생 불가능하게 설정하는 명령어, RFLAGS 레지스터의 IF 비트=0
+    ret
+
+; RFLAGS 레지스터를 읽어서 되돌려줌
+;   PARAM: 없음
+kReadRFLAGS:
+    pushfq          ; RFLAGS 레지스터를 스택에 저장; pushfq RFLAGS 레지스터를 스택에 저장하는 명령어
+    pop rax         ; 스택에 저장된 RFLAGS 레지스터를 RAX 레지스터에 저장하여 함수의 반환 값으로 설정
+    ret
