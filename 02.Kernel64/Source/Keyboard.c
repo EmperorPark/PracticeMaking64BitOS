@@ -37,11 +37,11 @@ BOOL kWaitForACKAndPutOtherScanCode( void )
     BOOL bResult = FALSE;
 
     // ACK가 오기 전에 키보드 출력 버퍼(포트 0x60)에 키 데이터가 저장 될 수 있으므로 키보드에서 전달된 데이터를 최대 100개까지 수신하여 ACK를 확인
-    for( j = 0; j < 100; j++ )
+    for( j = 0 ; j < 100 ; j++ )
     {
         // 0xFFFF만큼 루프를 수행할 시간이면 충분히 커맨드의 응답이 올 수 있음
         // 0xFFFF만큼 루프를 수행한 이후에도 출력 버퍼(포트 0x60)가 차 있지 않으면 무시하고 읽음
-        for( i = 0; i < 0xFFFF; i++ ) {
+        for( i = 0 ; i < 0xFFFF ; i++ ) {
             // 출력 버퍼(포트 0x60)가 차있으면 데이터를 읽을 수 있음
             if( kIsOutputBufferFull() == TRUE ) // 키보드 컨트롤러의 출력 버퍼(포트 0x60)에 데이터가 수신되었는지 확인하는 함수
             {
@@ -51,7 +51,7 @@ BOOL kWaitForACKAndPutOtherScanCode( void )
 
         // 출력 버퍼(포트 0x60)에서 읽은 데이터가 ACK(0xFA)이면 성공
         bData = kInPortByte( 0x60 ); // 키보드 컨트롤러의 출력 버퍼(포트 0x60)에서 한 바이트를 읽는 함수
-        if ( bData == 0xFA )
+        if( bData == 0xFA )
         {
             bResult = TRUE;
             break;
@@ -79,9 +79,10 @@ BOOL kActivateKeyboard( void ) {
     // 입력 버퍼(포트 0x60)가 빌 때까지 기다렸다가 키보드에 활성화 커맨드를 전송
     // 0xFFFF만큼 루프를 수행할 시간이면 충분히 커맨드가 전송될 수 있음
     // 0xFFFF 루프를 수행한 이후에도 입력 버퍼(포트 0x60)가 비지 않으면 무시하고 전송
-    for(i = 0; i < 0xFFFF; i++ ) {
+    for( i = 0 ; i < 0xFFFF ; i++ ) 
+    {
         // 입력 버퍼(포트 0x60)가 비어 있으면 키보드 커맨드 전송 가능
-        if( kIsInputBufferFull() == FALSE) {
+        if( kIsInputBufferFull() == FALSE ) {
             break;
         }
     }
@@ -124,7 +125,7 @@ BOOL kChangeKeyboardLED( BOOL bCapsLockOn, BOOL bNumLockOn, BOOL bScrollLockOn )
         }
     }
 
-    // 입력 버퍼(포트 0x60)으로 LED 상태 변경 커맨드(0xED) 전송
+    // 출력 버퍼(포트 0x60)로 LED 상태 변경 커맨드(0xED) 전송
     kOutPortByte( 0x60, 0xED );
     for( i = 0; i < 0xFFFF ; i++ ) {
         // 입력 버퍼(포트 0x60)가 비어 있으면 키보드가 커맨드를 가져간 것임
@@ -144,7 +145,7 @@ BOOL kChangeKeyboardLED( BOOL bCapsLockOn, BOOL bNumLockOn, BOOL bScrollLockOn )
     }
 
     // LED 변경 값을 키보드로 전송하고 데이터가 처리가 완료될 때까지 대기
-    kOutPortByte( 0x60, bCapsLockOn << 2 | bNumLockOn << 1 | bScrollLockOn );
+    kOutPortByte( 0x60, ( bCapsLockOn << 2 ) | ( bNumLockOn << 1 ) | bScrollLockOn );
 
     for( i = 0 ; i < 0xFFFF ; i++ ) {
         // 입력 버퍼(포트 0x60)가 비어 있으면 키보드가 LED 데이터를 가져간 것임
@@ -172,7 +173,8 @@ void kEnableA20Gate( void ) {
     kOutPortByte( 0x64, 0xD0 );
 
     // 출력 포트의 데이터를 기다렸다가 읽음
-    for ( i = 0 ; i < 0xFFFF ; i++ ) {
+    for( i = 0 ; i < 0xFFFF ; i++ )
+    {
         // 출력 버퍼(포트 0x60)가 차 있으면 데이터를 읽을 수 있음
         if( kIsOutputBufferFull() == TRUE ) { // 출력 버퍼(포트 0x60)의 상태를 확인하여 데이터가 차 있을 경우 TRUE, 비어 있으면 FLASE를 반환하는 함수
             break;
@@ -186,7 +188,8 @@ void kEnableA20Gate( void ) {
     bOutputPortData |= 0x01; // A20게이트 활성화 비트(비트1)를 1로 설정. 프로세서를 리셋하려면 bOutputPortData=0
 
     // 입력 버퍼(포트 0x60)에 데이터가 비어 있으면 출력 포트에 값을 쓰는 커맨드와 출력 포트 데이터 전송
-    for( i = 0; i < 0xFFFF ; i++ ) {
+    for( i = 0 ; i < 0xFFFF ; i++ )
+    {
         // 입력 버퍼(포트 0x60)가 비었으면 커맨드 전송 가능
         if( kIsInputBufferFull() == FALSE ) { // 입력 버퍼(0x60)가 비었으면 커맨드 전송 가능
             break;
@@ -463,7 +466,7 @@ BOOL kConvertScanCodeToASCIICode( BYTE bScanCode, BYTE* pbASCIICode, BOOL* pbFla
     // 조합된 키를 반환해야 하는가?
     bUseCombinedKey = kIsUseCombinedCode( bScanCode );
 
-    // 키 값 설명
+    // 키 값 설정
     if( bUseCombinedKey == TRUE ) {
         *pbASCIICode = gs_vstKeyMappingTable[ bScanCode & 0x7F ].bCombinedCode;
     } else {
