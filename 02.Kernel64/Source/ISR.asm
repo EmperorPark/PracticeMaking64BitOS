@@ -54,7 +54,7 @@ global kISRMouse, kISRCoprocessor, kISRHDD1, kISRHDD2, kISRETCInterrupt
 %endmacro           ; 매크로의 끝
 
 ; 콘텍스트를 복원하는 매크로
-%macro KLOADCONTEXT 0   ; 파라미터를 전달받지 않는 KSAVECONTEXT 매크로 정의
+%macro KLOADCONTEXT 0   ; 파라미터를 전달받지 않는 KLOADCONTEXT 매크로 정의
     ; GS 세그먼트 셀렉터부터 RBP 레지스터까지 모두 스택에서 꺼내 복원
     pop gs
     pop fs
