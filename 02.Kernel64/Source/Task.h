@@ -2,6 +2,7 @@
 #define __TASK_H__
 
 #include "Types.h"
+#include "List.h"
 
 // SS, RSP, RFLAGS, CS, RIP + ISR에서 저장하는 19개의 레지스터
 #define TASK_REGISTERCOUNT      ( 5 + 19 )
@@ -33,6 +34,19 @@
 #define TASK_RSPOFFSET          22
 #define TASK_SSOFFSET           23
 
+// 태스크 풀의 어드레스
+#define TASK_TCBPOOLADDRESS     0x800000 // IST 영역에 이어서 태스크 풀 영역 지정
+#define TASK_MAXCOUNT           1024 // 생성 할 수 있는 최대 태스크 수, 만약 태스크를 1024개 이상 생성하고 싶다면 매크로의 값 수정
+
+// 스택 풀과 스택의 크기
+#define TASK_STACKPOOLADDRESS   ( TASK_TCBPOOLADDRESS + sizeof( TCB ) * TASK_MAXCOUNT )
+#define TASK_STACKSIZE          8192
+
+// 유효하지 않은 태스크 ID
+#define TASK_INVALIDID          0xFFFFFFFFFFFFFFFF
+
+// 태스크가 최대로 쓸 수 있는 프로세서 시간(5 ms)
+#define TASK_PROCESSORTIME      5
 
 // 구조체
 // 1바이트로 정렬
@@ -41,27 +55,76 @@
 // 콘텍스트에 관련된 자료구조
 typedef struct kContextStruct
 {
-    QWORD vqReigister[ TASK_REGISTERCOUNT ];
+    QWORD vqRegister[ TASK_REGISTERCOUNT ];
 } CONTEXT;
-
 
 // 태스크의 상태를 관리하는 자료구조
 typedef struct kTaskControlBlockStruct
 {
+    // 다음 데이터의 위치와 ID
+    LISTLINK stLink;
+
+    // 플래그
+    QWORD qwFlags;
+
     // 콘텍스트
     CONTEXT stContext;
-    QWORD qwID;
-    QWORD qwFlags;
+    //QWORD qwID;
+    //QWORD qwFlags;
 
     // 스택의 어드레스와 크기
     void* pvStackAddress;
     QWORD qwStackSize;
 } TCB;
 
+// TCB 풀의 상태를 관리하는 자료구조
+typedef struct kTCBPoolManagerStruct
+{
+    // 태스크 풀에 대한 정보
+    TCB* pstStartAddress;
+    int iMaxCount;
+    int iUseCount;
+
+    // TCB가 할당된 횟수
+    int iAllocatedCount;
+} TCBPOOLMANAGER;
+
+// 스케줄러의 상태를 관리하는 자료구조
+typedef struct kSchedulerStruct
+{
+    // 현재 수행 중인 태스크
+    TCB* pstRunningTask;
+
+    // 현재 수행 중인 태스크가 사용할 수 있는 프로세서 시간
+    int iProcessorTime;
+
+    // 실행할 태스크가 준비 중인 리스트
+    LIST stReadyList;
+} SCHEDULER;
+
 #pragma pack( pop )
 
 // 함수
-void kSetUpTask( TCB* pstTCB, QWORD qwID, QWORD qwFlags, QWORD qwEntryPointAddress, void* pvStackAddress, QWORD qwStackSize );
+//=================================================================================================================================================================
+//      태스크 풀과 태스크 관련
+//=================================================================================================================================================================
+void kInitializeTCBPool( void );
+TCB* kAllocateTCB( void );
+void kFreeTCB( QWORD qwID );
+TCB* kCreateTask( QWORD qwFlags, QWORD qwEntryPointAddress );
+void kSetUpTask( TCB* pstTCB, QWORD qwFlags, QWORD qwEntryPointAddress, void* pvStackAddress, QWORD qwStackSize );
+
+//=================================================================================================================================================================
+//      스케줄러 관련
+//=================================================================================================================================================================
+void kInitializeScheduler( void );
+void kSetRunningTask( TCB* pstTask );
+TCB* kGetRunningTask( void );
+TCB* kGetNextTaskToRun( void );
+void kAddTaskToReadyList( TCB* pstTask );
+void kSchedule( void );
+BOOL kScheduleInInterrupt( void );
+void kDecreaseProcessorTime( void );
+BOOL kIsProcessorTimeExpired( void );
 
 #endif /*__TASK_H__*/
-

@@ -4,6 +4,7 @@ SECTION .text       ; text 섹션(세그먼트)을 정의
 
 ; 외부에서 정의된 함수를 쓸 수 있도록 선언함(Import)
 extern kCommonExceptionHandler, kCommonInterruptHandler, kKeyboardHandler
+extern kTimerHandler
 
 ; C 언어에서 호출할 수 있도록 이름을 노출함(Export)
 ; 예외(Exception) 처리를 위한 ISR
@@ -338,7 +339,8 @@ kISRTimer:
 
     ; 핸들러에 인터럽트 번호를 삽입하고 핸들러 호출
     mov rdi, 32 ; 핸들러에 백터 번호를 넘겨주려고 첫 번째 파라미터의 역할을 하는 RDI 레지스터에 삽입
-    call kCommonInterruptHandler ; 특별한 처리가 필요 없는 인터럽트이면 EOI를 전송하는 간단한 핸들러를 호출
+    ; call kCommonInterruptHandler ; 특별한 처리가 필요 없는 인터럽트이면 EOI를 전송하는 간단한 핸들러를 호출
+    call kTimerHandler ; 추가된 타이머 핸들러 호출
 
     KLOADCONTEXT    ; 콘텍스트를 복원
     iretq           ; 인터럽트 처리를 완료하고 이전에 수행하던 코드로 복원

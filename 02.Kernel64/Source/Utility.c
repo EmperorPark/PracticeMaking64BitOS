@@ -2,21 +2,30 @@
 #include "AssemblyUtility.h"
 #include <stdarg.h>
 
+
+// PIT 컨트롤러가 발생한 횟수를 저장할 카운터
+volatile QWORD g_qwTickCount = 0;
+//volatile g_qwTickCount = 0;
+
 // 메모리를 특정 값으로 채움
-void kMemSet( void* pvDestination, BYTE bData, int iSize ) {
+void kMemSet( void* pvDestination, BYTE bData, int iSize )
+{
     int i;
 
-    for( i = 0; i < iSize; i++ ) {
-        ( (char *) pvDestination)[ i ] = bData;
+    for( i = 0 ; i < iSize ; i++ )
+    {
+        ( ( char* ) pvDestination )[ i ] = bData;
     }
 }
 
 // 메모리 복사
-int kMemCpy( void* pvDestination, const void* pvSource, int iSize ) {
+int kMemCpy( void* pvDestination, const void* pvSource, int iSize )
+{
     int i;
 
-    for( i = 0; i < iSize; i++ ) {
-        ( (char *) pvDestination)[ i ] = ( (char *) pvSource)[ i ];
+    for( i = 0 ; i < iSize ; i++ )
+    {
+        ( ( char* ) pvDestination )[ i ] = ( ( char* ) pvSource )[ i ];
     }
 
     return iSize;
@@ -24,17 +33,19 @@ int kMemCpy( void* pvDestination, const void* pvSource, int iSize ) {
 
 
 // 메모리 비교
-int kMemCmp( const void* pvDestination, const void* pvSource, int iSize ) {
+int kMemCmp( const void* pvDestination, const void* pvSource, int iSize )
+{
     int i;
     char cTemp;
 
-    for( i = 0; i < iSize; i++ ) {
-        cTemp = ( (char *) pvDestination)[ i ] - ( (char *) pvSource)[ i ];
-        if( cTemp != 0 ) {
+    for( i = 0 ; i < iSize ; i++ )
+    {
+        cTemp = ( ( char* ) pvDestination )[ i ] - ( ( char* ) pvSource )[ i ];
+        if( cTemp != 0 )
+        {
             return ( int ) cTemp;
         }
     }
-
     return 0;
 }
 
@@ -59,9 +70,7 @@ BOOL kSetInterruptFlag( BOOL bEnableInterrupt )
     {
         return TRUE;
     }
-
     return FALSE;
-    
 }
 
 
@@ -69,6 +78,7 @@ BOOL kSetInterruptFlag( BOOL bEnableInterrupt )
 int kStrLen( const char* pcBuffer )
 {
     int i;
+
     for( i = 0 ; ; i++ )
     {
         if( pcBuffer[ i ] == '\0' )
@@ -91,7 +101,7 @@ void kCheckTotalRAMSize( void )
 
     // 64MB(0x4000000)부터 4MB 단위로 검사 시작
     pdwCurrentAddress = ( DWORD* ) 0x4000000;
-    while ( 1 )
+    while( 1 )
     {
         // 이전에 메모리에 있던 값을 저장
         dwPreviousValue = *pdwCurrentAddress;
@@ -105,7 +115,7 @@ void kCheckTotalRAMSize( void )
         // 이전 메모리 값을 복원
         *pdwCurrentAddress = dwPreviousValue;
         // 다음 4MB 위치로 이동
-        pdwCurrentAddress += ( 0x400000 / 4);
+        pdwCurrentAddress += ( 0x400000 / 4 );
     }
     // 체크가 성공한 어드레스를 1MB로 나누어 MB 단위로 계산
     gs_qwTotalRAMMBSize = ( QWORD ) pdwCurrentAddress / 0x100000;
@@ -121,7 +131,8 @@ QWORD kGetTotalRAMSize( void )
 long kAToI( const char* pcBuffer, int iRadix )
 {
     long lReturn;
-    switch ( iRadix )
+
+    switch( iRadix )
     {
         // 16진수
     case 16:
@@ -147,11 +158,11 @@ QWORD kHexStringToQword( const char* pcBuffer )
     for( i = 0 ; pcBuffer[ i ] != '\0' ; i++ )
     {
         qwValue *= 16;
-        if( ( 'A' <= pcBuffer[ i ] ) && ( pcBuffer[ i ] <= 'Z' ) )
+        if( ( 'A' <= pcBuffer[ i ] )  && ( pcBuffer[ i ] <= 'Z' ) )
         {
             qwValue += ( pcBuffer[ i ] - 'A' ) + 10;
         }
-        else if( ( 'a' <= pcBuffer[ i ] ) && ( pcBuffer[ i ] <= 'z' ) )
+        else if( ( 'a' <= pcBuffer[ i ] )  && ( pcBuffer[ i ] <= 'z' ) )
         {
             qwValue += ( pcBuffer[ i ] - 'a' ) + 10;
         }
@@ -198,7 +209,8 @@ long kDecimalStringToLong( const char* pcBuffer )
 int kIToA( long lValue, char* pcBuffer, int iRadix )
 {
     int iReturn;
-    switch ( iRadix )
+
+    switch( iRadix )
     {
         // 16진수
     case 16:
@@ -239,7 +251,8 @@ int kHexToString( QWORD qwValue, char* pcBuffer )
         {
             pcBuffer[ i ] = '0' + qwCurrentValue;
         }
-        qwValue /= 16;
+        
+        qwValue = qwValue / 16;
     }
     pcBuffer[ i ] = '\0';
 
@@ -277,8 +290,7 @@ int kDecimalToString( long lValue, char* pcBuffer )
     for( ; lValue > 0 ; i++ )
     {
         pcBuffer[ i ] = '0' + lValue % 10;
-        lValue /= 10;
-        
+        lValue = lValue / 10;
     }
     pcBuffer[ i ] = '\0';
 
@@ -298,7 +310,7 @@ int kDecimalToString( long lValue, char* pcBuffer )
 
 
 // 문자열의 순서를 뒤집음
-void kReverseString( char *pcBuffer )
+void kReverseString( char* pcBuffer )
 {
     int iLength;
     int i;
@@ -316,7 +328,7 @@ void kReverseString( char *pcBuffer )
 }
 
 // sprintf() 함수의 내부 구현
-int kSPrintf( char *pcBuffer, const char* pcFormatString, ... )
+int kSPrintf( char* pcBuffer, const char* pcFormatString, ... )
 {
     va_list ap;
     int iReturn;
@@ -413,4 +425,12 @@ int kVSPrintf( char* pcBuffer, const char* pcFormatString, va_list ap )
     // NULL을 추가해 완전한 문자열로 만들고 출력한 문자의 길이를 반환
     pcBuffer[ iBufferIndex ] = '\0';
     return iBufferIndex;
+}
+
+/**
+ *  Tick Count를 반환
+ */
+QWORD kGetTickCount( void )
+{
+    return g_qwTickCount;
 }
